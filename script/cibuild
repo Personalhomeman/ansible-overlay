@@ -1,0 +1,17 @@
+#!/bin/bash -e
+
+commit_sha="$(git rev-parse HEAD)"
+
+echo "%%%FOLD {Building docker image...}%%%"
+docker build -t ansible-overlay .
+echo "%%%END FOLD%%%"
+
+echo "%%%FOLD {Building ansible-overlay initramfs...}%%%"
+TMPDIR=$(mktemp -d /tmp/ans.XXXXX)
+docker run -e commit_sha="${commit_sha}" -v $TMPDIR:/tmp/output/ --rm -e "BUILD_NUMBER=${BUILD_NUMBER:-0}" ansible-overlay /ansible-overlay/script/build_overlay
+commit_sha="$(git rev-parse HEAD)"
+if [ -n "$BUILD_ARTIFACT_DIR" ]; then
+  mkdir -p "$BUILD_ARTIFACT_DIR/ansible-overlay/"
+  cp $TMPDIR/ansible-overlay.igz "$BUILD_ARTIFACT_DIR/ansible-overlay/${commit_sha}-ansible-overlay.igz"
+fi
+echo "%%%END FOLD%%%"

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -e
+
+# set up the overlay path
+OVERLAY=/tmp/overlay
+IMAGE_OUT_PATH=/tmp/output/ansible-overlay.igz
+mkdir -p $OVERLAY
+
+echo "$commit_sha" > /ansible/.commit_sha
+# Set the version from Jenkins VAR, with 0 as default
+echo "${BUILD_NUMBER:-0}" > /ansible/VERSION
+
+# Wrap it up
+mv /ansible $OVERLAY/ansible
+pushd $OVERLAY
+find | cpio -o -H newc | pigz -c > $IMAGE_OUT_PATH
+popd
+
+ls -alh $IMAGE_OUT_PATH
